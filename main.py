@@ -51,7 +51,7 @@ def generate_posts(request: OpenAIRequest):
     # Define the chat prompt templates
     system_template = """You are a social media manager. 
                         You generate an ordered list of social media posts. 
-                        A user will provide the topic and your job will be to generate posts about 100 characters each, 
+                        A user will provide the topic and your job will be to generate posts about 20 characters each, 
                         separated by order number. ONLY return an ordered list, and nothing more."""
 
     human_template = f"I need {days} {network} posts about {topic}"
