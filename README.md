@@ -32,13 +32,13 @@ This FastAPI application generates social media posts using the OpenAI API. It p
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/yourusername/yourrepository.git
+    git clone https://github.com/cojocaru/publisher-api.git
     ```
 
 2. Navigate to the project directory:
 
     ```bash
-    cd yourrepository
+    cd publisher-api
     ```
 
 3. Install the required packages:
