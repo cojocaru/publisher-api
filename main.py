@@ -1,20 +1,18 @@
 import os
 import json
-import re
+from config import settings
 from datetime import datetime, date, timedelta
 from fastapi import FastAPI, Body
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from models import OpenAIRequest
 from dotenv import load_dotenv
 import openai
-from collections import defaultdict
 from ordered_item_list_output_parser import OrderedItemListOutputParser
-from post_utilities import save_posts, get_grouped_posts
-
-from config import settings
+from post_utilities import save_posts, get_grouped_posts, is_valid_url, fetch_and_parse_url, clean_url_to_filename
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts.chat import ChatPromptTemplate
+
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -34,41 +32,50 @@ load_dotenv()
 # Set OpenAI API Key
 openai.api_key = settings.OPENAI_API_KEY
 
-# Define request model for OpenAI API
-class OpenAIRequest(BaseModel):
-    topic: str
-    network: str
-    days: int
+
 
 # Endpoint to generate posts using OpenAI API
 @app.post("/generate-posts/")
 def generate_posts(request: OpenAIRequest):
-    # Extract request parameters
     topic = request.topic
     network = request.network
     days = request.days
-    
-    # Define the chat prompt templates
+
+    # Default templates
     system_template = """You are a social media manager. 
                         You generate an ordered list of social media posts. 
                         A user will provide the topic and your job will be to generate posts about 20 characters each, 
                         separated by order number. ONLY return an ordered list, and nothing more."""
+    human_template = f"The topic is '{topic}'. Please generate a list of {days} {network} posts that would resonate with an audience interested in {topic}."
 
-    human_template = f"I need {days} {network} posts about {topic}"
+    if is_valid_url(topic):
+        content = fetch_and_parse_url(topic)
+        # Save content to a file in the "documents" folder
+        filename = clean_url_to_filename(topic) + '.txt'
+        if not os.path.exists('documents'):
+            os.makedirs('documents')
+        with open(f'documents/{filename}', 'w') as f:
+            f.write(content)
+        
+        # Modify the templates based on the URL content
+        human_template = f"Given the following content, please generate a list of {days} {network} posts that would resonate with an audience interested in these topics. Content: {content}"
     
+
+    # Continue with existing logic for generating posts
     chat_prompt = ChatPromptTemplate.from_messages([
         ("system", system_template),
         ("human", human_template),
     ])
 
     # Generate posts and save them
-    chain = chat_prompt | ChatOpenAI() | OrderedItemListOutputParser()
+    chain = chat_prompt | ChatOpenAI(model='gpt-3.5-turbo-16k') | OrderedItemListOutputParser()
     response_body = chain.invoke({"topic": topic, "network": network, "days": days})
-    # TODO: Add database persistance
+    # TODO: Add database persistence
     save_posts(topic, network, days, response_body)
-    
+
     # Return all posts grouped by date
     return JSONResponse(content=get_grouped_posts(), status_code=200)
+
     
 # Endpoint to get all posts
 @app.get("/get-all-posts/")

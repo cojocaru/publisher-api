@@ -65,7 +65,7 @@ This FastAPI application generates social media posts using the OpenAI API. It p
 
 ### Generate Posts
 
-To generate new posts, make a POST request to `/generate-posts/` with the following JSON payload:
+To generate new posts (limit 20 leters for now), make a POST request to `/generate-posts/` with the following JSON payload (the topic can be aslo URL):
 
 ```json
 {

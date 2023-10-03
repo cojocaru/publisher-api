@@ -1,6 +1,10 @@
 import os
 import json
+import re
+import requests
 from collections import defaultdict
+from urllib.parse import urlparse
+from bs4 import BeautifulSoup
 
 # Function to save generated posts into a JSON file
 def save_posts(topic, network, days, posts):
@@ -45,3 +49,20 @@ def get_grouped_posts():
 
     return dict(grouped_posts)
 
+def is_valid_url(url):
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
+
+def fetch_and_parse_url(url):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    # Extract text from paragraphs (modify as needed)
+    paragraphs = soup.find_all('p')
+    content = ' '.join([p.get_text() for p in paragraphs])
+    return content
+
+def clean_url_to_filename(url):
+    return re.sub(r'[^a-zA-Z0-9-_]', '', url)
