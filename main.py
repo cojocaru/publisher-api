@@ -13,6 +13,7 @@ from post_utilities import save_posts, get_grouped_posts, is_valid_url, fetch_an
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts.chat import ChatPromptTemplate
 
+#from rag import setup, rag_augmented_prompt
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -46,7 +47,8 @@ def generate_posts(request: OpenAIRequest):
                         You generate an ordered list of social media posts. 
                         A user will provide the topic and your job will be to generate posts about 20 characters each, 
                         separated by order number. ONLY return an ordered list, and nothing more."""
-    human_template = f"The topic is '{topic}'. Please generate a list of {days} {network} posts that would resonate with an audience interested in {topic}."
+    human_template = f"""The topic is '{topic}'. Please generate a list of {days} {network} posts
+                         that would resonate with an audience interested in {topic}."""
 
     if is_valid_url(topic):
         content = fetch_and_parse_url(topic)
@@ -58,8 +60,15 @@ def generate_posts(request: OpenAIRequest):
             f.write(content)
         
         # Modify the templates based on the URL content
-        human_template = f"Given the following content, please generate a list of {days} {network} posts that would resonate with an audience interested in these topics. Content: {content}"
+        human_template = f"""Given the following content,
+                             please generate a list of {days} {network} posts
+                            that would resonate with an audience interested in these topics.
+                            Content: {content}"""
     
+    #RAG framework template
+    # faiss_db = setup()
+    # query = topic
+    # human_template = rag_augmented_prompt(db, query, days, network)
 
     # Continue with existing logic for generating posts
     chat_prompt = ChatPromptTemplate.from_messages([
